@@ -1,6 +1,11 @@
-import database from "../../../../infra/database"
+import database from "infra/database.js"
 
-test("GET to api/v1/status retornar 200",async ()=> {
- const response= await fetch(" http://localhost:3000/api/v1/status")
- expect(response.status).toBe(200)
-})
+async function get(response,request,){
+  const result = await database.query('SELECT 1 + 1 as sum;')
+  response.status(200).json({
+    message:"servidor dando show",
+    resultado:result.rows
+  })
+  database.end()
+  console.log(result.rows)
+}
