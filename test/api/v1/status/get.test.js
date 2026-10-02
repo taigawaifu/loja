@@ -1,11 +1,17 @@
-import database from "infra/database.js"
+import database from "../../../../infra/database";
 
-async function get(response,request,){
-  const result = await database.query('SELECT 1 + 1 as sum;')
-  response.status(200).json({
-    message:"servidor dando show",
-    resultado:result.rows
-  })
-  database.end()
-  console.log(result.rows)
-}
+test("GET to /api/v1/status should return 200", async () => {
+  const response = await fetch("http://localhost:3000/api/v1/status");
+
+  expect(response.status).toBe(200);
+
+  const responseBody = await response.json();
+
+  expect(responseBody.updated_at).toBeDefined();
+
+  const parsedUpdatedAt = new Date(responseBody.updated_at).toISOString();
+
+  expect(responseBody.updated_at).toEqual(parsedUpdatedAt);
+
+  expect(responseBody.dependencies.database.version).toEqual("16.0");
+});
