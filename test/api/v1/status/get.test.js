@@ -1,17 +1,18 @@
-import database from "../../../../infra/database";
-
 test("GET to /api/v1/status should return 200", async () => {
-  const response = await fetch("http://localhost:3000/api/v1/status");
+    const response = await fetch("http://localhost:3000/api/v1/status");
 
-  expect(response.status).toBe(200);
+    expect(response.status).toBe(200);
 
-  const responseBody = await response.json();
+    const responseBody = await response.json();
 
-  expect(responseBody.updated_at).toBeDefined();
+    expect(responseBody.updated_at).toBeDefined();
 
-  const parsedUpdatedAt = new Date(responseBody.updated_at).toISOString();
+    const ParseUpdate = new Date(responseBody.updated_at).toISOString();
 
-  expect(responseBody.updated_at).toEqual(parsedUpdatedAt);
+    expect(responseBody.updated_at).toEqual(ParseUpdate);
+    expect(responseBody.databaseVersion).toEqual("160015");
+    expect(responseBody.Maxconnections).toEqual(100)
+    expect(responseBody.openConnections).toEqual(1)
+    
 
-  expect(responseBody.dependencies.database.version).toEqual("16.0");
 });
