@@ -11,11 +11,18 @@ async function  query(queryObject){
     
     
   })
-  console.log("senha:", typeof process.env.POSTGRES_HOST, process.env.POSTGRES_HOST);
-  await client.connect()
-  const result = await client.query(queryObject)
-  await client.end()
-  return result
+  console.log(process.env.POSTGRES_HOST, process.env.POSTGRES_PORT,process.env.POSTGRES_USER,process.env.POSTGRES_DB,process.env.POSTGRES_PASSWORD)
+  try{
+    await client.connect()
+    const result = await client.query(queryObject)
+    return result
+    
+  }catch(error){
+    console.log(error)
+    throw errorw
+  }finally{
+    await client.end()
+  }
 } 
 
 export default {
