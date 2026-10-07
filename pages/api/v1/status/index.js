@@ -1,18 +1,26 @@
-test("GET to /api/v1/status should return 200", async () => {
-    const response = await fetch("http://localhost:3000/api/v1/status");
+import database from "../../../../infra/database"
 
-    expect(response.status).toBe(200);
+async function status(request, response) {
+  const updatedAt = new Date().toISOString();
 
-    const responseBody = await response.json();
+  const versionResult = await database.query("SHOW server_version_num;");
+  const databaseVersion = versionResult.rows[0].server_version_num;
 
-    expect(responseBody.updated_at).toBeDefined();
+  const maxConnectionsResult = await database.query("SHOW max_connections;");
+  const maxConnections = parseInt(maxConnectionsResult.rows[0].max_connections);
 
-    const ParseUpdate = new Date(responseBody.updated_at).toISOString();
+  const openConnectionsResult = await database.query({
+    text: "SELECT count(*)::int AS count FROM pg_stat_activity WHERE datname = $1;",
+    values: [process.env.POSTGRES_DB],
+  });
+  const openConnections = openConnectionsResult.rows[0].count;
 
-    expect(responseBody.updated_at).toEqual(ParseUpdate);
-    expect(responseBody.databaseVersion).toEqual("180006");
-    expect(responseBody.Maxconnections).toEqual(100)
-    expect(responseBody.openConnections).toEqual(1)
-    
+  response.status(200).json({
+    updated_at: updatedAt,
+    databaseVersion,
+    Maxconnections: maxConnections,
+    openConnections,
+  });
+}
 
-});
+export default status;
