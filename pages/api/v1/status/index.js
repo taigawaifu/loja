@@ -21,6 +21,8 @@ async function status(request, response) {
     Maxconnections: maxConnections,
     openConnections,
   });
+  
 }
+
 
 export default status;
