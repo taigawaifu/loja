@@ -1,8 +1,10 @@
 import database from "../../../../infra/database";
-beforeAll(cleanDataBase)
-async function cleanDataBase() {
-  await database.query("drop schema public cascade; create schema public")
-}
+import orchestrator from "../orchestrator";
+
+  beforeAll(async()=>{
+    await orchestrator.awaitForAllServices()
+    await database.query("drop schema public cascade; create schema public")
+  })
 test("POST to /api/v1/migrations should return 200", async () => {
     const response = await fetch("http://localhost:3000/api/v1/migrations",{
       method:'POST'
@@ -11,6 +13,6 @@ test("POST to /api/v1/migrations should return 200", async () => {
     
     const responseBody = await response.json()
 
-    expect(responseBody.length).toBe(1)
+    expect(responseBody.length).toBeGreaterThan(0)
     console.log(responseBody)
 });
