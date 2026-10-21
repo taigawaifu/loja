@@ -2,7 +2,7 @@ import database from "../../../../infra/database.js";
 import orchestrator from "../orchestrator.js";
 
   beforeAll(async()=>{
-    await orchestrator.awaitForAllServices()
+    await orchestrator.waitForAllServices()
     await database.query("drop schema public cascade; create schema public")
 
   })
