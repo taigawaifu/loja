@@ -1,17 +1,43 @@
-import retry  from "async-retry"
+import retry from "async-retry";
+import database from "../../../infra/database";
 
-async function awaitForAllServices() {
-await waitForWebServer()  
-}
+async function waitForAllServices() {
+  await waitForWebServer();
+
   async function waitForWebServer() {
-    return retry(fechstatuspage)
+    return retry(fetchStatusPage, {
+      retries: 100,
+      maxTimeout: 1000,
+    });
 
-    async function fechstatuspage(){
-      const response = await fetch("http://localhost:3000/api/v1/status")
-      response.json(200)
+    async function fetchStatusPage() {
+      const response = await fetch("http://localhost:3000/api/v1/status");
+
+      if (response.status !== 200) {
+        throw new Error();
+      }
     }
-    
   }
-export default {
-    awaitForAllServices
 }
+
+async function clearDatabase() {
+  await database.query("drop schema public cascade; create schema public;");
+}
+
+async function runPendingMigrations() {
+  const response = await fetch("http://localhost:3000/api/v1/migrations", {
+    method: "POST",
+  });
+
+  if (response.status !== 200 && response.status !== 201) {
+    throw new Error("Falha ao rodar as migrations nos testes");
+  }
+}
+
+const orchestrator = {
+  waitForAllServices,
+  clearDatabase,
+  runPendingMigrations,
+};
+
+export default orchestrator;

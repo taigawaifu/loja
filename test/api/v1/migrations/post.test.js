@@ -2,7 +2,7 @@ import database from "../../../../infra/database";
 import orchestrator from "../orchestrator";
 
   beforeAll(async()=>{
-    await orchestrator.awaitForAllServices()
+    await orchestrator.waitForAllServices()
     await database.query("drop schema public cascade; create schema public")
   })
 test("POST to /api/v1/migrations should return 200", async () => {
@@ -12,6 +12,7 @@ test("POST to /api/v1/migrations should return 200", async () => {
     expect(response.status).toBe(201)
     
     const responseBody = await response.json()
+    console.log(responseBody)
 
     expect(responseBody.length).toBeGreaterThan(0)
     console.log(responseBody)
