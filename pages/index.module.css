@@ -1,0 +1,189 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #1f2933;
+  background: #ffffff;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #ffffff;
+  border-bottom: 1px solid #e4e7eb;
+}
+
+.headerInner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1e3a5f;
+  text-decoration: none;
+}
+
+.menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.greeting {
+  color: #52606d;
+}
+
+.link {
+  color: #1e3a5f;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.button {
+  display: inline-block;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.primary {
+  background: #1e3a5f;
+  color: #ffffff;
+}
+
+.primary:hover {
+  background: #2c5282;
+}
+
+.outline {
+  background: transparent;
+  color: #1e3a5f;
+  border: 2px solid #1e3a5f;
+}
+
+.outline:hover {
+  background: #eef2f7;
+}
+
+.hero {
+  background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+  color: #ffffff;
+}
+
+.heroInner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 80px 20px;
+}
+
+.hero h1 {
+  font-size: 44px;
+  line-height: 1.1;
+  margin: 0 0 16px;
+  max-width: 640px;
+}
+
+.hero p {
+  font-size: 20px;
+  margin: 0 0 28px;
+  max-width: 560px;
+  opacity: 0.9;
+}
+
+.heroButton {
+  background: #ffffff;
+  color: #1e3a5f;
+}
+
+.heroButton:hover {
+  background: #eef2f7;
+}
+
+.section {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 64px 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.section h2 {
+  font-size: 30px;
+  margin: 0 0 24px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.serviceCard {
+  background: #f8f9fb;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.serviceCard h3 {
+  margin: 0 0 8px;
+  color: #1e3a5f;
+}
+
+.serviceCard p {
+  margin: 0;
+  color: #52606d;
+  line-height: 1.5;
+}
+
+.contact {
+  background: #f4f5f7;
+}
+
+.contactList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+  font-size: 18px;
+}
+
+.footer {
+  margin-top: auto;
+  background: #1f2933;
+  color: #cbd2d9;
+  text-align: center;
+  padding: 20px;
+  font-size: 14px;
+}
+
+@media (max-width: 760px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero h1 {
+    font-size: 32px;
+  }
+
+  .greeting {
+    display: none;
+  }
+}
