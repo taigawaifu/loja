@@ -2,7 +2,7 @@ import database from "../infra/database";
 import { NotFoundError, ValidationError } from "../infra/errors";
 
 const SELECT_FIELDS = `
-  id, name, address, phone, description,
+  id, name, cpf, address, phone, description,
   TO_CHAR(warranty_until, 'YYYY-MM-DD') AS warranty_until
 `;
 
@@ -33,8 +33,8 @@ async function create(data) {
 
   const result = await database.query({
     text: `
-      INSERT INTO clients (name, address, phone, warranty_until, description)
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO clients (name, cpf, address, phone, warranty_until, description)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING ${SELECT_FIELDS};
     `,
     values,
@@ -50,8 +50,8 @@ async function update(id, data) {
   const result = await database.query({
     text: `
       UPDATE clients
-      SET name = $1, address = $2, phone = $3, warranty_until = $4, description = $5
-      WHERE id = $6
+      SET name = $1, cpf = $2, address = $3, phone = $4, warranty_until = $5, description = $6
+      WHERE id = $7
       RETURNING ${SELECT_FIELDS};
     `,
     values: [...values, id],
@@ -77,7 +77,7 @@ async function remove(id) {
   }
 }
 
-function validateAndPrepare({ name, address, phone, warranty_until, description } = {}) {
+function validateAndPrepare({ name, cpf, address, phone, warranty_until, description } = {}) {
   if (!name || !name.trim()) {
     throw new ValidationError({
       message: "O nome é obrigatório.",
@@ -85,13 +85,45 @@ function validateAndPrepare({ name, address, phone, warranty_until, description 
     });
   }
 
+  const cpfDigits = cpf ? String(cpf).replace(/\D/g, "") : "";
+
+  if (cpfDigits && !isValidCpf(cpfDigits)) {
+    throw new ValidationError({
+      message: "O CPF informado não é válido.",
+      action: "Confira os números do CPF.",
+    });
+  }
+
   return [
     name.trim(),
+    cpfDigits || null,
     address || null,
     phone || null,
     warranty_until || null,
     description || null,
   ];
+}
+
+function isValidCpf(digits) {
+  if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) {
+    return false;
+  }
+
+  for (let position = 9; position < 11; position++) {
+    let sum = 0;
+
+    for (let i = 0; i < position; i++) {
+      sum += Number(digits[i]) * (position + 1 - i);
+    }
+
+    const checkDigit = ((sum * 10) % 11) % 10;
+
+    if (checkDigit !== Number(digits[position])) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function validateId(id) {
