@@ -9,14 +9,14 @@ const store = {
   subtitle: "Atendimento de confiança, peças de qualidade e garantia em todos os serviços.",
   whatsapp: "5551997414445",
   whatsappMessage: "Olá, Gilberto! Vim pelo site da TEC-SAT e gostaria de um orçamento.",
-  heroImages: ["/images/loja-1.jpg", "/images/loja-2.jpg", "/images/loja-3.jpg"],
+  heroImages: ["Antena.jpg", "INSTALADOR.JPG", "tvbox.jpg"],
   services: [
     { title: "Consertos", text: "Diagnóstico e reparo com orçamento antes de começar." },
     { title: "Peças", text: "Peças de qualidade, com procedência e garantia." },
     { title: "Garantia", text: "Todo serviço sai com garantia registrada no nosso sistema." },
   ],
-  address: "Rua Exemplo, 123 - Centro",
-  phone: "(51) 99999-9999",
+  address: "Av.italia 2230",
+  phone: "(51) 997414445",
   hours: "Segunda a sexta, das 9h às 18h",
 };
 
