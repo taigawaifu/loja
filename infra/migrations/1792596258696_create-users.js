@@ -1,5 +1,3 @@
-import { password } from "pg/lib/defaults";
-
 export const shorthands = undefined;
 
 export const up = (pgm) => {
@@ -14,15 +12,15 @@ export const up = (pgm) => {
       notNull: true,
       unique: true,
     },
-    password:{
-     type: "varchar(60)",
-     notNull: true,
+    email: {
+      type: "varchar(254)",
+      notNull: true,
+      unique: true,
     },
-    email:{
-     type: "varchar(20)",
-     notNull: true,
-     unique: true
-    }
+    password: {
+      type: "varchar(60)",
+      notNull: true,
+    },
   });
 };
 
