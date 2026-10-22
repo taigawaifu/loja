@@ -1,10 +1,15 @@
+import { useEffect, useState } from "react";
 import useSWR from "swr";
+import Gilbertinho from "../components/Gilbertinho";
 import styles from "./index.module.css";
 
 const store = {
-  name: "Loja",
-  headline: "Conserto e assistência com garantia",
+  name: "TEC-SAT",
+  headline: "Assistência de antena e aparelhos",
   subtitle: "Atendimento de confiança, peças de qualidade e garantia em todos os serviços.",
+  whatsapp: "5551997414445",
+  whatsappMessage: "Olá, Gilberto! Vim pelo site da TEC-SAT e gostaria de um orçamento.",
+  heroImages: ["antena.jpg", "INSTALADOR.jpg", "tvbox.jpg"],
   services: [
     { title: "Consertos", text: "Diagnóstico e reparo com orçamento antes de começar." },
     { title: "Peças", text: "Peças de qualidade, com procedência e garantia." },
@@ -14,6 +19,8 @@ const store = {
   phone: "(51) 99999-9999",
   hours: "Segunda a sexta, das 9h às 18h",
 };
+
+const whatsappLink = `https://wa.me/${store.whatsapp}?text=${encodeURIComponent(store.whatsappMessage)}`;
 
 async function fetchUser(url) {
   const response = await fetch(url);
@@ -59,6 +66,53 @@ function UserMenu() {
   );
 }
 
+function HeroSlides() {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    if (store.heroImages.length <= 1) return;
+
+    const timer = setInterval(() => {
+      setCurrent((index) => (index + 1) % store.heroImages.length);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <>
+      {store.heroImages.map((image, index) => (
+        <div
+          key={image}
+          className={`${styles.heroSlide} ${index === current ? styles.heroSlideActive : ""}`}
+          style={{ backgroundImage: `url(${image})` }}
+        />
+      ))}
+      <div className={styles.heroOverlay} />
+      <SlideDots current={current} onSelect={setCurrent} />
+    </>
+  );
+}
+
+function SlideDots({ current, onSelect }) {
+  if (store.heroImages.length <= 1) return null;
+
+  return (
+    <div style={{ position: "absolute", bottom: 20, left: 0, right: 0, zIndex: 2 }}>
+      <div className={styles.dots} style={{ justifyContent: "center", marginTop: 0 }}>
+        {store.heroImages.map((image, index) => (
+          <button
+            key={image}
+            aria-label={`Ver foto ${index + 1}`}
+            className={`${styles.dot} ${index === current ? styles.dotActive : ""}`}
+            onClick={() => onSelect(index)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   return (
     <div className={styles.page}>
@@ -72,12 +126,21 @@ export default function Home() {
       </header>
 
       <section className={styles.hero}>
+        <HeroSlides />
+
         <div className={styles.heroInner}>
-          <h1>{store.headline}</h1>
-          <p>{store.subtitle}</p>
-          <a href="#contato" className={`${styles.button} ${styles.heroButton}`}>
-            Fale com a gente
-          </a>
+          <div>
+            <h1>{store.headline}</h1>
+            <p>{store.subtitle}</p>
+            <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className={styles.whatsappButton}>
+              Falar no WhatsApp
+            </a>
+          </div>
+
+          <div className={styles.mascot}>
+            <div className={styles.bubble}>Oi! Eu sou o Gilbertinho!</div>
+            <Gilbertinho size={200} />
+          </div>
         </div>
       </section>
 
@@ -97,9 +160,9 @@ export default function Home() {
         <div className={styles.section}>
           <h2>Contato</h2>
           <ul className={styles.contactList}>
-            <li>Av.italia 2230:</li>
-            <li>51 999741-4445:</li>
-            <li>09:00-12:00-14:00-18:00</li>
+            <li>Av.italia 2230: </li>
+            <li>51 9997414445: </li>
+            <li>09:00-18:00: </li>
           </ul>
         </div>
       </section>
@@ -107,6 +170,16 @@ export default function Home() {
       <footer className={styles.footer}>
         © {new Date().getFullYear()} {store.name}. Todos os direitos reservados.
       </footer>
+
+      <a
+        href={whatsappLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${styles.whatsappButton} ${styles.whatsappFloat}`}
+        aria-label="Falar no WhatsApp"
+      >
+        WhatsApp
+      </a>
     </div>
   );
 }

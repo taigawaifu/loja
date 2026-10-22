@@ -7,6 +7,8 @@
   background: #ffffff;
 }
 
+/* Cabeçalho */
+
 .header {
   position: sticky;
   top: 0;
@@ -52,6 +54,8 @@
   text-decoration: underline;
 }
 
+/* Botões */
+
 .button {
   display: inline-block;
   padding: 10px 18px;
@@ -61,6 +65,7 @@
   border: none;
   cursor: pointer;
   font-size: 16px;
+  font-family: inherit;
 }
 
 .primary {
@@ -82,15 +87,44 @@
   background: #eef2f7;
 }
 
+/* Hero com fotos */
+
 .hero {
-  background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+  position: relative;
+  overflow: hidden;
   color: #ffffff;
+  background: #1e3a5f;
+}
+
+.heroSlide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+
+.heroSlideActive {
+  opacity: 1;
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(30, 58, 95, 0.95) 0%, rgba(30, 58, 95, 0.8) 55%, rgba(44, 82, 130, 0.55) 100%);
 }
 
 .heroInner {
+  position: relative;
+  z-index: 1;
   max-width: 1080px;
   margin: 0 auto;
-  padding: 80px 20px;
+  padding: 64px 20px 80px;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  align-items: center;
+  gap: 32px;
 }
 
 .hero h1 {
@@ -107,14 +141,97 @@
   opacity: 0.9;
 }
 
-.heroButton {
-  background: #ffffff;
-  color: #1e3a5f;
+/* Gilbertinho */
+
+.mascot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: float 3s ease-in-out infinite;
 }
 
-.heroButton:hover {
-  background: #eef2f7;
+.bubble {
+  background: #ffffff;
+  color: #1e3a5f;
+  font-weight: 700;
+  padding: 12px 18px;
+  border-radius: 16px;
+  margin-bottom: 8px;
+  position: relative;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
+
+.bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 10px solid transparent;
+  border-top-color: #ffffff;
+  border-bottom: 0;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* WhatsApp */
+
+.whatsappButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #25d366;
+  color: #ffffff;
+  padding: 14px 22px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 18px;
+  text-decoration: none;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.whatsappButton:hover {
+  background: #1ebe5b;
+}
+
+.whatsappFloat {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 20;
+}
+
+/* Bolinhas das fotos */
+
+.dots {
+  display: flex;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  padding: 0;
+}
+
+.dotActive {
+  background: #ffffff;
+}
+
+/* Seções */
 
 .section {
   max-width: 1080px;
@@ -174,13 +291,25 @@
   font-size: 14px;
 }
 
+/* Celular */
+
 @media (max-width: 760px) {
-  .grid {
+  .heroInner {
     grid-template-columns: 1fr;
+    text-align: center;
   }
 
   .hero h1 {
     font-size: 32px;
+  }
+
+  .hero p {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
   }
 
   .greeting {
