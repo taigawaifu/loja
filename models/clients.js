@@ -1,11 +1,11 @@
+
 import database from "../infra/database";
 import { NotFoundError, ValidationError } from "../infra/errors";
 
 const SELECT_FIELDS = `
-  id, name, cpf, address, phone, description,
+  id, name, cpf, address, phone, description, user_id,
   TO_CHAR(warranty_until, 'YYYY-MM-DD') AS warranty_until
 `;
-
 async function findAll() {
   const result = await database.query(
     `SELECT ${SELECT_FIELDS} FROM clients ORDER BY name;`,
@@ -17,8 +17,9 @@ async function findOneById(id) {
   validateId(id);
 
   const result = await database.query({
-    text: `SELECT ${SELECT_FIELDS} FROM clients WHERE id = $1;`,
+    text: `SELECT ${SELECT_FIELDS} FROM clients WHERE id = $1,;`,
     values: [id],
+    
   });
 
   if (result.rowCount === 0) {
@@ -133,6 +134,36 @@ function validateId(id) {
     throw new NotFoundError({ message: "Cliente não encontrado." });
   }
 }
+async function linkUser(clientId, userEmail) {
+  validateId(clientId);
+
+  const userResult = await database.query({
+    text: "SELECT id FROM users WHERE LOWER(email) = LOWER($1);",
+    values: [userEmail],
+  });
+
+  if (userResult.rowCount === 0) {
+    throw new NotFoundError({
+      message: "Nenhuma conta do site foi encontrada com esse e-mail.",
+      action: "Peça para a pessoa criar a conta no site primeiro.",
+    });
+  }
+
+  const result = await database.query({
+    text: `
+      UPDATE clients SET user_id = $1
+      WHERE id = $2
+      RETURNING ${SELECT_FIELDS};
+    `,
+    values: [userResult.rows[0].id, clientId],
+  });
+
+  if (result.rowCount === 0) {
+    throw new NotFoundError({ message: "Cliente não encontrado." });
+  }
+
+  return result.rows[0];
+}
 
 const clients = {
   findAll,
@@ -140,6 +171,7 @@ const clients = {
   create,
   update,
   remove,
+  linkUser
 };
 
 export default clients;

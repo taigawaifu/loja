@@ -210,6 +210,25 @@ export default function ClientesPage() {
     await fetch(`/api/v1/clients/${client.id}`, { method: "DELETE" });
     mutate();
   }
+  async function handleLink(client) {
+  const userEmail = prompt(`E-mail da conta do site de ${client.name}:`);
+  if (!userEmail) return;
+
+  const response = await fetch(`/api/v1/clients/${client.id}/link`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: userEmail }),
+  });
+
+  const body = await response.json();
+
+  if (!response.ok) {
+    alert(body.message);
+    return;
+  }
+
+  mutate();
+}
 
   function handleCancel() {
     setForm(emptyForm);
@@ -362,6 +381,21 @@ export default function ClientesPage() {
                 <button onClick={() => handleDelete(client)} className={`${styles.button} ${styles.danger}`}>
                   Excluir
                 </button>
+                <div className={styles.actions}>
+        <button onClick={() => handleEdit(client)} className={`${styles.button} ${styles.secondary}`}>
+    Editar
+  </button>
+  <button onClick={() => handleDelete(client)} className={`${styles.button} ${styles.danger}`}>
+    Excluir
+  </button>
+  {client.user_id ? (
+    <span className={`${styles.badge} ${styles.valid}`}>Conta vinculada</span>
+  ) : (
+    <button onClick={() => handleLink(client)} className={`${styles.button} ${styles.secondary}`}>
+      Vincular conta
+    </button>
+  )}
+</div>
               </div>
             </article>
           );
