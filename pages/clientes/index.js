@@ -1,91 +1,100 @@
 import { useState } from "react";
 import useSWR from "swr";
+import ClientesLayout, { AccessMessage } from "../../components/clientesLayout";
 import styles from "./clientes.module.css";
+import { fetchJson, formatCpf, formatDate, getWarrantyStatus, onlyDigits } from "../../lib/clientes";
 
-const emptyForm = {
-  name: "",
-  cpf: "",
-  address: "",
-  phone: "",
-  warranty_until: "",
-  description: "",
-};
+const columns = [
+  { key: "name", label: "Nome" },
+  { key: "cpf", label: "CPF" },
+  { key: "phone", label: "Telefone" },
+  { key: "address", label: "Endereço" },
+  { key: "warranty_until", label: "Garantia até" },
+  { key: "description", label: "Serviços / observações" },
+];
 
-async function fetchClients(url) {
-  const response = await fetch(url);
-  if (response.status === 401) return { unauthorized: true };
-  if (response.status === 403) return { forbidden: true };
+function displayValue(client, field) {
+  if (field === "cpf") return client.cpf ? formatCpf(client.cpf) : "";
 
-  const body = await response.json();
-  if (!response.ok) return { error: body.message };
+  if (field === "warranty_until") {
+    if (!client.warranty_until) return "";
+    const status = getWarrantyStatus(client.warranty_until);
+    return <span className={`${styles.badge} ${styles[status]}`}>{formatDate(client.warranty_until)}</span>;
+  }
 
-  return body;
+  if (field === "description") {
+    return (client.description || "").split("\n").filter(Boolean).join(" · ");
+  }
+
+  return client[field];
 }
 
-function onlyDigits(value) {
-  return (value || "").replace(/\D/g, "");
-}
+function EditableCell({ client, field, onSave }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState("");
+  const [saving, setSaving] = useState(false);
 
-function formatCpf(value) {
-  const digits = onlyDigits(value).slice(0, 11);
-  return digits
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-}
+  const original = client[field] || "";
 
-function formatDate(isoDate) {
-  if (!isoDate) return null;
-  const [year, month, day] = isoDate.split("-");
-  return `${day}/${month}/${year}`;
-}
+  function startEditing() {
+    setValue(field === "cpf" ? formatCpf(original) : original);
+    setEditing(true);
+  }
 
-function getWarrantyStatus(isoDate) {
-  if (!isoDate) return "none";
+  async function finishEditing() {
+    setEditing(false);
 
-  const today = new Date().toISOString().slice(0, 10);
-  const inThirtyDays = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .slice(0, 10);
+    const newValue = field === "cpf" ? onlyDigits(value) : value;
+    if (newValue === original) return;
 
-  if (isoDate < today) return "expired";
-  if (isoDate <= inThirtyDays) return "soon";
-  return "valid";
-}
+    setSaving(true);
+    await onSave(client, field, newValue);
+    setSaving(false);
+  }
 
-const warrantyLabels = {
-  valid: "Em dia",
-  soon: "Vence em breve",
-  expired: "Vencida",
-  none: "Sem garantia",
-};
+  function handleKeyDown(event) {
+    if (event.key === "Escape") {
+      setEditing(false);
+      return;
+    }
 
-async function logout() {
-  await fetch("/api/v1/sessions", { method: "DELETE" });
-  window.location.href = "/";
-}
+    if (event.key === "Enter" && field !== "description") {
+      event.preventDefault();
+      event.target.blur();
+    }
+  }
 
-function Layout({ children }) {
+  if (editing) {
+    const inputProps = {
+      autoFocus: true,
+      value,
+      onChange: (event) => setValue(field === "cpf" ? formatCpf(event.target.value) : event.target.value),
+      onBlur: finishEditing,
+      onKeyDown: handleKeyDown,
+    };
+
+    if (field === "description") {
+      return <textarea {...inputProps} className={`${styles.cellInput} ${styles.cellTextarea}`} />;
+    }
+
+    return (
+      <input
+        {...inputProps}
+        type={field === "warranty_until" ? "date" : "text"}
+        className={styles.cellInput}
+      />
+    );
+  }
+
+  const shown = displayValue(client, field);
+
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerInner}>
-          <h1>Clientes</h1>
-          <nav className={styles.nav}>
-            <a href="/">Início</a>
-            <a
-              href="/"
-              onClick={(event) => {
-                event.preventDefault();
-                logout();
-              }}
-            >
-              Sair
-            </a>
-          </nav>
-        </div>
-      </header>
-      <main className={styles.container}>{children}</main>
+    <div
+      className={`${styles.cell} ${saving ? styles.saving : ""}`}
+      onClick={startEditing}
+      title="Clique para editar"
+    >
+      {shown || <span className={styles.placeholder}>—</span>}
     </div>
   );
 }
@@ -121,286 +130,189 @@ function Stats({ clients }) {
 }
 
 export default function ClientesPage() {
-  const { data, mutate } = useSWR("/api/v1/clients", fetchClients);
-  const [form, setForm] = useState(emptyForm);
-  const [editingId, setEditingId] = useState(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const { data, mutate } = useSWR("/api/v1/clients", fetchJson);
   const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState("name");
+  const [sortDirection, setSortDirection] = useState("asc");
 
-  if (!data) return <Layout>Carregando...</Layout>;
+  if (!data) return <ClientesLayout title="Clientes" wide>Carregando...</ClientesLayout>;
 
-  if (data.unauthorized) {
+  if (data.unauthorized || data.forbidden || data.error) {
     return (
-      <Layout>
-        <div className={styles.card}>
-          <p>Você precisa entrar para ver esta página.</p>
-          <a href="/login">Ir para o login</a>
-        </div>
-      </Layout>
+      <ClientesLayout title="Clientes" wide>
+        <AccessMessage data={data} />
+      </ClientesLayout>
     );
   }
 
-  if (data.forbidden) {
-    return (
-      <Layout>
-        <div className={styles.card}>
-          <p>Você não tem permissão para acessar esta página.</p>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (data.error) {
-    return (
-      <Layout>
-        <div className={styles.card}>
-          <p className={styles.error}>Não foi possível carregar os clientes: {data.error}</p>
-        </div>
-      </Layout>
-    );
-  }
-
-  function handleChange(event) {
-    const { name, value } = event.target;
-    setForm({ ...form, [name]: name === "cpf" ? formatCpf(value) : value });
-  }
-
-  async function handleSubmit(event) {
-    event.preventDefault();
-    setErrorMessage("");
-
-    const url = editingId ? `/api/v1/clients/${editingId}` : "/api/v1/clients";
-    const method = editingId ? "PATCH" : "POST";
-
-    const response = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, cpf: onlyDigits(form.cpf) }),
-    });
-
-    if (!response.ok) {
-      const body = await response.json();
-      setErrorMessage(body.message);
-      return;
-    }
-
-    setForm(emptyForm);
-    setEditingId(null);
-    setSearch("");
-    mutate();
-  }
-
-  function handleEdit(client) {
-    setEditingId(client.id);
-    setErrorMessage("");
-    setForm({
-      name: client.name || "",
-      cpf: formatCpf(client.cpf),
+  async function handleSave(client, field, value) {
+    const payload = {
+      name: client.name,
+      cpf: client.cpf || "",
       address: client.address || "",
       phone: client.phone || "",
       warranty_until: client.warranty_until || "",
       description: client.description || "",
+      [field]: value,
+    };
+
+    const response = await fetch(`/api/v1/clients/${client.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    if (!response.ok) {
+      const body = await response.json();
+      alert(body.message);
+    }
+
+    mutate();
   }
 
   async function handleDelete(client) {
-    if (!confirm(`Excluir ${client.name}?`)) return;
+    if (!confirm(`Excluir ${client.name}? Essa ação não pode ser desfeita.`)) return;
 
     await fetch(`/api/v1/clients/${client.id}`, { method: "DELETE" });
     mutate();
   }
+
   async function handleLink(client) {
-  const userEmail = prompt(`E-mail da conta do site de ${client.name}:`);
-  if (!userEmail) return;
+    const userEmail = prompt(`E-mail da conta do site de ${client.name}:`);
+    if (!userEmail) return;
 
-  const response = await fetch(`/api/v1/clients/${client.id}/link`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: userEmail }),
-  });
+    const response = await fetch(`/api/v1/clients/${client.id}/link`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: userEmail }),
+    });
 
-  const body = await response.json();
+    if (!response.ok) {
+      const body = await response.json();
+      alert(body.message);
+      return;
+    }
 
-  if (!response.ok) {
-    alert(body.message);
-    return;
+    mutate();
   }
 
-  mutate();
-}
-
-  function handleCancel() {
-    setForm(emptyForm);
-    setEditingId(null);
-    setErrorMessage("");
+  function handleSort(key) {
+    if (key === sortKey) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDirection("asc");
+    }
   }
 
   const term = search.trim().toLowerCase();
   const termDigits = onlyDigits(search);
 
-  const filteredClients = data.filter((client) => {
-    if (!term) return true;
+  const visibleClients = data
+    .filter((client) => {
+      if (!term) return true;
 
-    const textMatch = [client.name, client.address]
-      .filter(Boolean)
-      .some((value) => value.toLowerCase().includes(term));
-
-    const digitsMatch =
-      termDigits.length > 0 &&
-      [client.cpf, client.phone]
+      const textMatch = [client.name, client.address, client.description]
         .filter(Boolean)
-        .some((value) => onlyDigits(value).includes(termDigits));
+        .some((value) => value.toLowerCase().includes(term));
 
-    return textMatch || digitsMatch;
-  });
+      const digitsMatch =
+        termDigits.length > 0 &&
+        [client.cpf, client.phone]
+          .filter(Boolean)
+          .some((value) => onlyDigits(value).includes(termDigits));
+
+      return textMatch || digitsMatch;
+    })
+    .sort((a, b) => {
+      const valueA = a[sortKey] || "";
+      const valueB = b[sortKey] || "";
+
+      if (!valueA && valueB) return 1;
+      if (valueA && !valueB) return -1;
+
+      const comparison = valueA.localeCompare(valueB, "pt-BR");
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
 
   return (
-    <Layout>
+    <ClientesLayout title="Clientes" wide>
       <Stats clients={data} />
 
-      <section className={styles.card}>
-        <h2 className={styles.cardTitle}>{editingId ? "Editar cliente" : "Novo cliente"}</h2>
-
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.row}>
-            <label className={styles.label}>
-              Nome
-              <input name="name" value={form.name} onChange={handleChange} required className={styles.input} />
-            </label>
-
-            <label className={styles.label}>
-              CPF
-              <input
-                name="cpf"
-                value={form.cpf}
-                onChange={handleChange}
-                inputMode="numeric"
-                placeholder="000.000.000-00"
-                className={styles.input}
-              />
-            </label>
-          </div>
-
-          <label className={styles.label}>
-            Endereço
-            <input name="address" value={form.address} onChange={handleChange} className={styles.input} />
-          </label>
-
-          <div className={styles.row}>
-            <label className={styles.label}>
-              Telefone
-              <input name="phone" type="tel" value={form.phone} onChange={handleChange} className={styles.input} />
-            </label>
-
-            <label className={styles.label}>
-              Garantia até
-              <input
-                name="warranty_until"
-                type="date"
-                value={form.warranty_until}
-                onChange={handleChange}
-                className={styles.input}
-              />
-            </label>
-          </div>
-
-          <label className={styles.label}>
-            Descrição
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              className={`${styles.input} ${styles.textarea}`}
-              placeholder="Descreva o serviço, o aparelho, observações..."
-            />
-          </label>
-
-          {errorMessage && <p className={styles.error}>{errorMessage}</p>}
-
-          <div className={styles.actions}>
-            <button type="submit" className={`${styles.button} ${styles.primary}`}>
-              {editingId ? "Salvar alterações" : "Cadastrar cliente"}
-            </button>
-            {editingId && (
-              <button type="button" onClick={handleCancel} className={`${styles.button} ${styles.secondary}`}>
-                Cancelar
-              </button>
-            )}
-          </div>
-        </form>
-      </section>
-
       <div className={styles.toolbar}>
-        <h2>
-          {term ? `${filteredClients.length} de ${data.length} clientes` : `${data.length} clientes`}
-        </h2>
+        <h2>{term ? `${visibleClients.length} de ${data.length} clientes` : `${data.length} clientes`}</h2>
         <input
           className={styles.search}
-          placeholder="Buscar por nome, CPF, telefone ou endereço..."
+          placeholder="Buscar por nome, CPF, telefone, endereço ou serviço..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
-      {filteredClients.length === 0 && (
+      <p className={styles.hint}>
+        Clique numa célula para alterar. <strong>Enter</strong> salva, <strong>Esc</strong> cancela. Clique no título
+        da coluna para ordenar.
+      </p>
+
+      {visibleClients.length === 0 ? (
         <p className={styles.empty}>
-          {data.length === 0 ? "Nenhum cliente cadastrado ainda." : "Nenhum cliente encontrado."}
+          {data.length === 0 ? (
+            <>
+              Nenhum cliente cadastrado ainda. <a href="/clientes/novo">Cadastrar o primeiro</a>
+            </>
+          ) : (
+            "Nenhum cliente encontrado."
+          )}
         </p>
+      ) : (
+        <div className={styles.tableWrapper}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                {columns.map((column) => (
+                  <th key={column.key} onClick={() => handleSort(column.key)}>
+                    {column.label} {sortKey === column.key ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+                  </th>
+                ))}
+                <th>Conta no site</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleClients.map((client) => (
+                <tr key={client.id}>
+                  {columns.map((column) => (
+                    <td key={column.key}>
+                      <EditableCell client={client} field={column.key} onSave={handleSave} />
+                    </td>
+                  ))}
+                  <td>
+                    <div className={styles.cell}>
+                      {client.user_email ? (
+                        client.user_email
+                      ) : (
+                        <button onClick={() => handleLink(client)} className={styles.smallButton}>
+                          Vincular
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <div className={styles.cell}>
+                      <button
+                        onClick={() => handleDelete(client)}
+                        className={`${styles.smallButton} ${styles.smallDanger}`}
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-
-      <div className={styles.list}>
-        {filteredClients.map((client) => {
-          const status = getWarrantyStatus(client.warranty_until);
-
-          return (
-            <article key={client.id} className={styles.client}>
-              <div className={styles.clientTop}>
-                <div className={styles.avatar}>{client.name.charAt(0).toUpperCase()}</div>
-                <div>
-                  <h3 className={styles.clientName}>{client.name}</h3>
-                  <span className={`${styles.badge} ${styles[status]}`}>
-                    {warrantyLabels[status]}
-                    {client.warranty_until && ` · ${formatDate(client.warranty_until)}`}
-                  </span>
-                </div>
-              </div>
-
-              <div className={styles.details}>
-                <div><strong>CPF:</strong> {client.cpf ? formatCpf(client.cpf) : "—"}</div>
-                <div><strong>Telefone:</strong> {client.phone || "—"}</div>
-                <div><strong>Endereço:</strong> {client.address || "—"}</div>
-              </div>
-
-              {client.description && <p className={styles.description}>{client.description}</p>}
-
-              <div className={styles.actions}>
-                <button onClick={() => handleEdit(client)} className={`${styles.button} ${styles.secondary}`}>
-                  Editar
-                </button>
-                <button onClick={() => handleDelete(client)} className={`${styles.button} ${styles.danger}`}>
-                  Excluir
-                </button>
-                <div className={styles.actions}>
-        <button onClick={() => handleEdit(client)} className={`${styles.button} ${styles.secondary}`}>
-    Editar
-  </button>
-  <button onClick={() => handleDelete(client)} className={`${styles.button} ${styles.danger}`}>
-    Excluir
-  </button>
-  {client.user_id ? (
-    <span className={`${styles.badge} ${styles.valid}`}>Conta vinculada</span>
-  ) : (
-    <button onClick={() => handleLink(client)} className={`${styles.button} ${styles.secondary}`}>
-      Vincular conta
-    </button>
-  )}
-</div>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-    </Layout>
+    </ClientesLayout>
   );
 }
