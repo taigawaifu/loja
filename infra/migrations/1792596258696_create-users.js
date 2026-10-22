@@ -17,6 +17,11 @@ export const up = (pgm) => {
     password:{
      type: "varchar(60)",
      notNull: true,
+    },
+    email:{
+     type: "varchar(20)",
+     notNull: true,
+     unique: true
     }
   });
 };

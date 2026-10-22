@@ -6,15 +6,13 @@ function onNoMatchHandler(request, response) {
 }
 
 function onErrorHandler(error, request, response) {
-  const publicErrorObject = new InternalServerError({
-    cause: error,
-    statusCode: error.statusCode
-  });
+  if (error.statusCode && error.statusCode < 500) {
+    return response.status(error.statusCode).json(error);
+  }
 
-  console.log("\n Erro dentro do catch do next-connect:");
+  const publicErrorObject = new InternalServerError({ cause: error });
   console.error(publicErrorObject);
-
-  response.status(publicErrorObject.statusCode).json(publicErrorObject);
+  response.status(500).json(publicErrorObject);
 }
 
 const controller = {
