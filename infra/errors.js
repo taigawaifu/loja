@@ -1,3 +1,12 @@
+function toPublicJSON(error) {
+  return {
+    name: error.name,
+    message: error.message,
+    action: error.action,
+    status_code: error.statusCode,
+  };
+}
+
 export class InternalServerError extends Error {
   constructor({ cause }) {
     super("Um erro interno não esperado aconteceu.", { cause });
@@ -7,30 +16,7 @@ export class InternalServerError extends Error {
   }
 
   toJSON() {
-    return {
-      name: this.name,
-      message: this.message,
-      action: this.action,
-      status_code: this.statusCode,
-    };
-  }
-}
-
-export class MethodNotAllowedError extends Error {
-  constructor() {
-    super("Método não permitido para este endpoint.");
-    this.name = "MethodNotAllowedError";
-    this.action = "Verifique se o método HTTP enviado é válido para este endpoint.";
-    this.statusCode = 405;
-  }
-
-  toJSON() {
-    return {
-      name: this.name,
-      message: this.message,
-      action: this.action,
-      status_code: this.statusCode,
-    };
+    return toPublicJSON(this);
   }
 }
 
@@ -43,12 +29,7 @@ export class ServicesError extends Error {
   }
 
   toJSON() {
-    return {
-      name: this.name,
-      message: this.message,
-      action: this.action,
-      status_code: this.statusCode,
-    };
+    return toPublicJSON(this);
   }
 }
 
@@ -61,35 +42,12 @@ export class ValidationError extends Error {
   }
 
   toJSON() {
-    return {
-      name: this.name,
-      message: this.message,
-      action: this.action,
-      status_code: this.statusCode,
-    };
-  }
-}
-
-export class NotFoundError extends Error {
-  constructor({ message, action }) {
-    super(message || "Não foi possível encontrar este recurso.");
-    this.name = "NotFoundError";
-    this.action = action || "Verifique se os parâmetros enviados estão corretos.";
-    this.statusCode = 404;
-  }
-
-  toJSON() {
-    return {
-      name: this.name,
-      message: this.message,
-      action: this.action,
-      status_code: this.statusCode,
-    };
+    return toPublicJSON(this);
   }
 }
 
 export class UnauthorizedError extends Error {
-  constructor({ message, action, cause }) {
+  constructor({ message, action, cause } = {}) {
     super(message || "Usuário não autenticado.", { cause });
     this.name = "UnauthorizedError";
     this.action = action || "Faça novamente o login para continuar.";
@@ -97,28 +55,45 @@ export class UnauthorizedError extends Error {
   }
 
   toJSON() {
-    return {
-      name: this.name,
-      message: this.message,
-      action: this.action,
-      status_code: this.statusCode,
-    };
+    return toPublicJSON(this);
   }
 }
+
 export class ForbiddenError extends Error {
-  constructor({ message, action }) {
+  constructor({ message, action } = {}) {
     super(message || "Você não possui permissão para executar esta ação.");
     this.name = "ForbiddenError";
-    this.action = action || "Verifique se você tem permissão para esta ação.";
+    this.action = action || "Fale com o administrador do sistema.";
     this.statusCode = 403;
   }
 
   toJSON() {
-    return {
-      name: this.name,
-      message: this.message,
-      action: this.action,
-      status_code: this.statusCode,
-    };
+    return toPublicJSON(this);
+  }
+}
+
+export class NotFoundError extends Error {
+  constructor({ message, action } = {}) {
+    super(message || "Não foi possível encontrar este recurso.");
+    this.name = "NotFoundError";
+    this.action = action || "Verifique se os parâmetros enviados estão corretos.";
+    this.statusCode = 404;
+  }
+
+  toJSON() {
+    return toPublicJSON(this);
+  }
+}
+
+export class MethodNotAllowedError extends Error {
+  constructor() {
+    super("Método não permitido para este endpoint.");
+    this.name = "MethodNotAllowedError";
+    this.action = "Verifique se o método HTTP enviado é válido para este endpoint.";
+    this.statusCode = 405;
+  }
+
+  toJSON() {
+    return toPublicJSON(this);
   }
 }

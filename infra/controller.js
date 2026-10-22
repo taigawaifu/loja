@@ -1,4 +1,4 @@
-import { InternalServerError, MethodNotAllowedError } from "./errors";
+import { InternalServerError, MethodNotAllowedError,ForbiddenError } from "./errors";
 import session from "../models/session";
 import user from "../models/users";
 
@@ -43,6 +43,15 @@ async function requireAuthentication(request, response, next) {
 
   return next();
 }
+async function requireAdmin(request, response, next) {
+  if (!request.context?.user?.is_admin) {
+    throw new ForbiddenError({
+      message: "Você não possui permissão para acessar esta área.",
+    });
+  }
+
+  return next();
+}
 
 const controller = {
   errorHandlers: {
@@ -52,6 +61,7 @@ const controller = {
   setSessionCookie,
   clearSessionCookie,
   requireAuthentication,
+  requireAdmin
 };
 
 export default controller;
