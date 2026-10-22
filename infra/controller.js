@@ -1,4 +1,6 @@
 import { InternalServerError, MethodNotAllowedError } from "./errors";
+import session from "../models/session";
+import user from "../models/users";
 
 function onNoMatchHandler(request, response) {
   const publicErrorObject = new MethodNotAllowedError();
@@ -14,7 +16,6 @@ function onErrorHandler(error, request, response) {
   console.error(publicErrorObject);
   response.status(500).json(publicErrorObject);
 }
-import session from "../models/session";
 
 function setSessionCookie(token, response) {
   const maxAgeInSeconds = session.EXPIRATION_IN_MILLISECONDS / 1000;
@@ -33,6 +34,16 @@ function clearSessionCookie(response) {
   );
 }
 
+async function requireAuthentication(request, response, next) {
+  const token = request.cookies.session_id;
+  const sessionFound = await session.findOneValidByToken(token);
+  const userFound = await user.findOneById(sessionFound.user_id);
+
+  request.context = { user: userFound };
+
+  return next();
+}
+
 const controller = {
   errorHandlers: {
     onNoMatch: onNoMatchHandler,
@@ -40,6 +51,7 @@ const controller = {
   },
   setSessionCookie,
   clearSessionCookie,
+  requireAuthentication,
 };
 
 export default controller;
