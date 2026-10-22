@@ -105,3 +105,20 @@ export class UnauthorizedError extends Error {
     };
   }
 }
+export class ForbiddenError extends Error {
+  constructor({ message, action }) {
+    super(message || "Você não possui permissão para executar esta ação.");
+    this.name = "ForbiddenError";
+    this.action = action || "Verifique se você tem permissão para esta ação.";
+    this.statusCode = 403;
+  }
+
+  toJSON() {
+    return {
+      name: this.name,
+      message: this.message,
+      action: this.action,
+      status_code: this.statusCode,
+    };
+  }
+}
