@@ -4,6 +4,8 @@ import migrator from "../../../../models/migrator";
 
 const router = createRouter();
 
+router.use(controller.requireAuthentication, controller.requireAdmin);
+
 router.get(getHandler);
 router.post(postHandler);
 
