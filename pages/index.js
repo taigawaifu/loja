@@ -9,7 +9,7 @@ const store = {
   subtitle: "Atendimento de confiança, peças de qualidade e garantia em todos os serviços.",
   whatsapp: "5551997414445",
   whatsappMessage: "Olá, Gilberto! Vim pelo site da TEC-SAT e gostaria de um orçamento.",
-  heroImages: ["antena.jpg", "INSTALADOR.jpg", "tvbox.jpg"],
+  heroImages: ["/images/loja-1.jpg", "/images/loja-2.jpg", "/images/loja-3.jpg"],
   services: [
     { title: "Consertos", text: "Diagnóstico e reparo com orçamento antes de começar." },
     { title: "Peças", text: "Peças de qualidade, com procedência e garantia." },
@@ -54,9 +54,13 @@ function UserMenu() {
   return (
     <div className={styles.menu}>
       <span className={styles.greeting}>Olá, {user.username}</span>
-      {user.is_admin && (
+      {user.is_admin ? (
         <a href="/clientes" className={`${styles.button} ${styles.primary}`}>
           Gerenciar clientes
+        </a>
+      ) : (
+        <a href="/meus-servicos" className={`${styles.button} ${styles.primary}`}>
+          Meus serviços
         </a>
       )}
       <button onClick={handleLogout} className={`${styles.button} ${styles.outline}`}>
@@ -160,9 +164,9 @@ export default function Home() {
         <div className={styles.section}>
           <h2>Contato</h2>
           <ul className={styles.contactList}>
-            <li>Av.italia 2230: </li>
-            <li>51 9997414445: </li>
-            <li>09:00-18:00: </li>
+            <li>Endereço: {store.address}</li>
+            <li>Telefone: {store.phone}</li>
+            <li>Horário: {store.hours}</li>
           </ul>
         </div>
       </section>

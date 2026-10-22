@@ -12,7 +12,21 @@ async function findAll() {
   );
   return result.rows;
 }
+async function findOneByUserId(userId) {
+  const result = await database.query({
+    text: `SELECT ${SELECT_FIELDS} FROM clients WHERE user_id = $1 LIMIT 1;`,
+    values: [userId],
+  });
 
+  if (result.rowCount === 0) {
+    throw new NotFoundError({
+      message: "Seu cadastro ainda não foi vinculado a esta conta.",
+      action: "Entre em contato com a loja para vincular seu cadastro.",
+    });
+  }
+
+  return result.rows[0];
+}
 async function findOneById(id) {
   validateId(id);
 
@@ -171,7 +185,9 @@ const clients = {
   create,
   update,
   remove,
-  linkUser
+  linkUser,
+  findOneByUserId
+
 };
 
 export default clients;
